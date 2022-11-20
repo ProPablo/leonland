@@ -1,9 +1,9 @@
 #include <iostream>
-#include "application.h"
+#include "Application.h"
 
 int main()
 {
 	std::cout << "Hey man" << std::endl;
-	kongroo::Application app;
+	Application app;
 	app.Run();
 }
