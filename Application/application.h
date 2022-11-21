@@ -1,6 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include "imgui/imgui.h"
+#include "rendering/Shader.h"
 
 //TODO: make precompiled header with string and iostream if using this
 
@@ -18,13 +19,13 @@
 class Application
 {
 public:
-	Application();
 	void Run();
 private:
 
 	GLFWwindow* _window = nullptr;
 	ImVec4 _clear_color = {};
-	GLuint _shaderProgram;
+	Shader _shader;
+	//GLuint _shaderProgram;
 	//Vertex array object
 	GLuint _VAO;
 	void OnDrawUI();

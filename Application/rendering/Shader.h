@@ -1,26 +1,27 @@
 #pragma once
 #include <string>
-#include <map>
-//Already declared in glad
-//typedef char GLchar;
-//typedef unsigned int GLuint;
+#include <unordered_map>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/vec4.hpp>
 
 //TODO: Convert this to infer that shader referes to a compiled shaderprogram not individual vector and frag shaders
-//inludes:
-//Upload uniforms (these are accessed fper program, not per shader)
-//Error handling
 class Shader
 {
 public:
 	//This forces the user of this class to pass in a bool to check if didSucceed 
 	//wheras a Create static method can return nullptr OR ask for input reference and return bool which is argueably batter
-	Shader(const std::string& filePath, GLenum shaderType, bool& didSucceed);
-	static GLuint CompileProgram(const Shader& vert, const Shader& frag);
-	GLuint _shaderRef;
+
+	//Shader(const std::string& filePath, GLenum shaderType, bool& didSucceed);
+	static bool Create(Shader& reference, const std::string& vecShaderFilePath, const std::string& fragShaderFilePath);
+	//this is type conversion function (in c# this would be reffered to with the implicit keyword)
+	operator GLuint () const { return _progRef; }
+	void SetUniformv4(const std::string& name, glm::vec4& val);
 private:
-	std::string GetSource(const std::string& filePath);
-	GLuint LoadSourceShaderFromSource();
-	std::map<std::string, int> shaderUniforms;
+	static std::string GetSource(const std::string& filePath);
+	static GLuint LoadShader(const std::string& source, GLenum shaderType);
+	int GetUniformId(const std::string& name);
+	std::unordered_map<std::string, int> _shaderUniforms;
+	GLuint _progRef;
 };
 
 

@@ -23,11 +23,11 @@ static void glfw_error_callback(int error, const char* description)
 //	std::cout << errorString << std::endl;
 //}
 
-Application::Application()
-{
-	//Init imgui style here
-
-}
+//Application::Application()
+//{
+//	//Init imgui style here
+//
+//}
 
 void Application::Run()
 {
@@ -151,6 +151,7 @@ void Application::OnDrawUI()
 		static float f = 0.0f;
 		static int counter = 0;
 		static bool wireFrame = false;
+		static glm::vec4 squareColor = { 0.463, 0.725, 0 , 1};
 
 		ImGui::Begin("Hello, world!");                          // Create a _window called "Hello, world!" and append into it.
 
@@ -160,6 +161,7 @@ void Application::OnDrawUI()
 
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 		ImGui::ColorEdit3("clear color", (float*)&_clear_color); // Edit 3 floats representing a color
+		ImGui::ColorEdit4("SquareColor", glm::value_ptr(squareColor)); 
 
 		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
 			counter++;
@@ -173,6 +175,8 @@ void Application::OnDrawUI()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		_shader.SetUniformv4("_Color", squareColor);
 
 	}
 
@@ -189,7 +193,7 @@ void Application::OnRender()
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//Draw all elements
-	glUseProgram(_shaderProgram);
+	glUseProgram(_shader);
 	glBindVertexArray(_VAO);
 	//Last arguement is how many vertices we want to draw
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -270,21 +274,16 @@ void Application::OnInit()
 	glBindVertexArray(_VAO);
 
 	DrawQuad();
-	bool didShaderSucceed;
-	Shader vertexShader("shaders/vertex.glsl", GL_VERTEX_SHADER, didShaderSucceed);
-	if (!didShaderSucceed) return;
-	Shader fragShader("shaders/frag.glsl", GL_FRAGMENT_SHADER, didShaderSucceed);
-	if (!didShaderSucceed) return;
-	_shaderProgram = Shader::CompileProgram(vertexShader, fragShader);
 
-	//Only need program ref to upload uniforms and do anything
-	glDeleteShader(vertexShader._shaderRef);
-	glDeleteShader(fragShader._shaderRef);
+	Shader::Create(_shader, "shaders/vertex.glsl", "shaders/frag.glsl");
+
+	//_shaderProgram = Shader::CompileProgram(vertexShader, fragShader);
+
 
 	//This uses the VBO currently bound using glBindBuffer
 	//First arg is vertex attribute (layout (location = 0)) in vert shader
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glUseProgram(_shaderProgram);
+	glUseProgram(_shader);
 }
