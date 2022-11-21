@@ -150,11 +150,12 @@ void Application::OnDrawUI()
 	{
 		static float f = 0.0f;
 		static int counter = 0;
+		static bool wireFrame = false;
 
 		ImGui::Begin("Hello, world!");                          // Create a _window called "Hello, world!" and append into it.
 
 		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		//ImGui::Checkbox("Demo Window", &show_demo__window);      // Edit bools storing our _window open/close state
+		ImGui::Checkbox("Wire Frame", &wireFrame);      // Edit bools storing our _window open/close state
 		//ImGui::Checkbox("Another Window", &show_another__window);
 
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
@@ -167,6 +168,12 @@ void Application::OnDrawUI()
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
+
+		if (wireFrame)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 	}
 
 }
@@ -185,12 +192,12 @@ void Application::OnRender()
 	glUseProgram(_shaderProgram);
 	glBindVertexArray(_VAO);
 	//Last arguement is how many vertices we want to draw
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
 }
 
-void DrawTriangle()
+void DrawQuad()
 {
 	//art done in https://asciiflow.com/#/share/eJy10ksKwjAQANCrDLNSSI0fFNqtrrtyGZDQBgmkCaRRWou38DiexpOYUsFPSylIh5DMwGPChFSoeSYw0ielCCpeCosRVgwLhlG4WRGGpc%2BWYegzJwrnC4Z7K7k%2BKgGJ0bmzp8RJo0FqiHdbmMTGZlzJSy5SSMVZJrUzNpWaO5FDsABnYDFlTD9u97FXcwv0R6ebk%2FlsPcABZT4GtaQAHbaL0npr2w5Km6Nl25QeXvFr3zTwI5PgY%2B6v%2Bq%2Fn7HOjfwK84vUJ68El2w%3D%3D)
 	/*
@@ -210,19 +217,49 @@ void DrawTriangle()
 	*/
 
 	float vertices[] = {
-		-0.5, -0.5, 0,
-		 0.5, -0.5, 0,
-		   0,  0.5, 0
+		0.5, 0.5, 0, //top right
+		0.5, -0.5, 0, //bottom right
+		-0.5, -0.5, 0, //bottom left
+		-0.5,  0.5, 0 //top left
 	};
-
-	unsigned int VBO;
+	//Vertex Buffer Object
+	GLuint VBO;
 	glGenBuffers(1, &VBO);
 
 	//We have to bind buffer every time we are going to use the buffer
+	//The GL_ARRAY_BUFFER is there to indicate that this is to hold vertices
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+	/*
+		Indices and which vertices are being used
+		-----------------------
+			  3         0
+			   +-------+
+			   |\      |
+			   | \     |
+			   |  \ 1  |
+			   |   \   |
+			   |    \  |
+			   |  2  \ |
+			   |      \|
+			   +-------+
+			  2         1
 
+		-----------------------
+	*/
+
+	int indices[] = {
+		0,1,3,
+		1,2,3
+	};
+
+	//Element Buffer Object
+	GLuint EBO;
+	glGenBuffers(1, &EBO);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 }
 
 void Application::OnInit()
@@ -232,7 +269,7 @@ void Application::OnInit()
 	glGenVertexArrays(1, &_VAO);
 	glBindVertexArray(_VAO);
 
-	DrawTriangle();
+	DrawQuad();
 	bool didShaderSucceed;
 	Shader vertexShader("shaders/vertex.glsl", GL_VERTEX_SHADER, didShaderSucceed);
 	if (!didShaderSucceed) return;

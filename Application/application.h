@@ -25,6 +25,7 @@ private:
 	GLFWwindow* _window = nullptr;
 	ImVec4 _clear_color = {};
 	GLuint _shaderProgram;
+	//Vertex array object
 	GLuint _VAO;
 	void OnDrawUI();
 	void OnRender();
