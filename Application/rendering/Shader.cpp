@@ -42,6 +42,10 @@ void Shader::SetUniformv4(const std::string& name, glm::vec4& val)
 	//Vector version of glUniform4f, second arg: how many to send
 	glUniform4fv(GetUniformId(name), 1, glm::value_ptr(val));
 }
+void Shader::SetUniformi(const std::string& name, int val)
+{
+	glUniform1i(GetUniformId(name), val);
+}
 
 int Shader::GetUniformId(const std::string& name)
 {

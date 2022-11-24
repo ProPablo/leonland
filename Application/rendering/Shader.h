@@ -16,6 +16,7 @@ public:
 	//this is type conversion function (in c# this would be reffered to with the implicit keyword)
 	operator GLuint () const { return _progRef; }
 	void SetUniformv4(const std::string& name, glm::vec4& val);
+	void SetUniformi(const std::string& name, int val);
 private:
 	static std::string GetSource(const std::string& filePath);
 	static GLuint LoadShader(const std::string& source, GLenum shaderType);
