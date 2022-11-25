@@ -17,6 +17,7 @@ public:
 	operator GLuint () const { return _progRef; }
 	void SetUniformv4(const std::string& name, glm::vec4& val);
 	void SetUniformi(const std::string& name, int val);
+	void SetMat4(const std::string& name, const glm::mat4& mat);
 private:
 	static std::string GetSource(const std::string& filePath);
 	static GLuint LoadShader(const std::string& source, GLenum shaderType);

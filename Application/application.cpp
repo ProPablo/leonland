@@ -166,15 +166,20 @@ void Application::OnDrawUI()
         static bool wireFrame = false;
         static glm::vec4 squareColor = { 0.463, 0.725, 0 , 1 };
         static char imageFile[255] = "assets/muhheart.jpg";
+        static glm::vec3 position = {};
+        static glm::vec3 scale(1.0f);
+        static float angle = 0;
+        glm::mat4 transform = glm::mat4(1.0f);
 
-        ImGui::Begin("Hello, world!");                          // Create a _window called "Hello, world!" and append into it.
-
-        ImGui::Checkbox("Wire Frame", &wireFrame);      // Edit bools storing our _window open/close state
-
-        ImGui::ColorEdit3("clear color", (float*)&_clear_color); // Edit 3 floats representing a color
+        ImGui::Begin("Change leonLand values");
+        ImGui::Checkbox("Wire Frame", &wireFrame);
+        ImGui::ColorEdit3("clear color", (float*)&_clear_color);
         ImGui::ColorEdit4("SquareColor", glm::value_ptr(squareColor));
+        ImGui::DragFloat3("Position", glm::value_ptr(position));
+        ImGui::DragFloat3("Scale", glm::value_ptr(scale));
+        ImGui::DragFloat("Angle", &angle);
 
-        ImGui::InputTextWithHint("input text (w/ hint)", "enter text here", imageFile, 255);
+        ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
         if (ImGui::Button("Change Picture"))
         {
             glActiveTexture(GL_TEXTURE1);
@@ -192,8 +197,19 @@ void Application::OnDrawUI()
 
         _shader.SetUniformv4("_Color", squareColor);
 
+        transform = glm::translate(transform, position);
+        transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
+        transform = glm::scale(transform, scale);
+
+        _shader.SetMat4("transform", transform);
+
     }
 
+}
+glm::mat4 Application::GetCamMat4()
+{
+    //Negative direction because we want everything to go the other way
+    return glm::translate(glm::mat4(1.0f), -camPosition);
 }
 
 void Application::OnRender()
@@ -209,10 +225,11 @@ void Application::OnRender()
     //Draw all elements
     glUseProgram(_shader);
     glBindVertexArray(_VAO);
+
+    //Perform transformations
+
     //Last arguement is how many vertices we want to draw
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-    //It is possible to draw multiple times, just changing the uniforms in shaders 
 
 
 }

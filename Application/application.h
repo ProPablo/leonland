@@ -24,11 +24,14 @@ private:
 
 	GLFWwindow* _window = nullptr;
 	ImVec4 _clear_color = {};
+	//orthographic projection will make it so z doesnt matter here
+	glm::vec3 camPosition = {0.0f, 0.0f, 3.0f};
 	Shader _shader;
 	//GLuint _shaderProgram;
 	//Vertex array object
 	GLuint _VAO;
 	void OnDrawUI();
+	glm::mat4 GetCamMat4();
 	void OnRender();
 	void OnInit();
 
