@@ -10,6 +10,7 @@ out vec3 tintColor;
 out vec2 TexCoord;
 
 uniform mat4 transform;
+uniform mat4 cam;
 
 
 void main() 

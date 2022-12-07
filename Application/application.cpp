@@ -21,34 +21,6 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 
-GLuint GenerateTexture(const std::string& filePath)
-{
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
-    if (!data)
-    {
-        log_error("Failed to load texture");
-        return 0;
-    }
-
-    //https://stackoverflow.com/questions/71284184/opengl-distorted-texture
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //This is how bitpacking works with unsinged bytes (255) instead of full floats, doesnt make things slow excpet texture loading
-    //https://stackoverflow.com/questions/11042027/glpixelstoreigl-unpack-alignment-1-disadvantages
-    //This suggests that when changing etxtures to and from gpu, try to make it multiple of 8
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    //2nd arg: mipmap level
-    //3rd arg: texture type
-    //7.8th format and datatype of input
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
-
-    return texture;
-}
-
 void Application::Run()
 {
     log_dbg("Starting Application");
@@ -169,15 +141,16 @@ void Application::OnDrawUI()
         static glm::vec3 position = {};
         static glm::vec3 scale(1.0f);
         static float angle = 0;
-        glm::mat4 transform = glm::mat4(1.0f);
+        //glm::mat4 transform = glm::mat4(1.0f);
 
         ImGui::Begin("Change leonLand values");
         ImGui::Checkbox("Wire Frame", &wireFrame);
         ImGui::ColorEdit3("clear color", (float*)&_clear_color);
-        ImGui::ColorEdit4("SquareColor", glm::value_ptr(squareColor));
-        ImGui::DragFloat3("Position", glm::value_ptr(position));
-        ImGui::DragFloat3("Scale", glm::value_ptr(scale));
-        ImGui::DragFloat("Angle", &angle);
+        //ImGui::ColorEdit4("SquareColor", glm::value_ptr(squareColor));
+        //ImGui::DragFloat3("Position", glm::value_ptr(position));
+        //ImGui::DragFloat3("Scale", glm::value_ptr(scale));
+        //ImGui::DragFloat("Angle", &angle);
+        ImGui::DragFloat3("Cam Position", glm::value_ptr(camPosition));
 
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
         if (ImGui::Button("Change Picture"))
@@ -197,19 +170,15 @@ void Application::OnDrawUI()
 
         _shader.SetUniformv4("_Color", squareColor);
 
-        transform = glm::translate(transform, position);
-        transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
-        transform = glm::scale(transform, scale);
+        //transform = glm::translate(transform, position);
+        //transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
+        //transform = glm::scale(transform, scale);
 
-        _shader.SetMat4("transform", transform);
+        //_shader.SetMat4("transform", transform);
+        //_shader.SetMat4()
 
     }
 
-}
-glm::mat4 Application::GetCamMat4()
-{
-    //Negative direction because we want everything to go the other way
-    return glm::translate(glm::mat4(1.0f), -camPosition);
 }
 
 void Application::OnRender()
@@ -225,6 +194,11 @@ void Application::OnRender()
     //Draw all elements
     glUseProgram(_shader);
     glBindVertexArray(_VAO);
+    //static glm::vec3 positions[] = {
+    //    {0,0,0},
+    //    {5,2,0},
+
+    //};
 
     //Perform transformations
 
@@ -346,4 +320,39 @@ void Application::OnInit()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
+}
+
+
+GLuint Application::GenerateTexture(const std::string & filePath)
+{
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
+    if (!data)
+    {
+        log_error("Failed to load texture");
+        return 0;
+    }
+
+    //https://stackoverflow.com/questions/71284184/opengl-distorted-texture
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //This is how bitpacking works with unsinged bytes (255) instead of full floats, doesnt make things slow excpet texture loading
+    //https://stackoverflow.com/questions/11042027/glpixelstoreigl-unpack-alignment-1-disadvantages
+    //This suggests that when changing etxtures to and from gpu, try to make it multiple of 8
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    //2nd arg: mipmap level
+    //3rd arg: texture type
+    //7.8th format and datatype of input
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    return texture;
+}
+
+glm::mat4 Application::GetCamMat4()
+{
+    //Negative direction because we want everything to go the other way
+    return glm::translate(glm::mat4(1.0f), -camPosition);
 }
