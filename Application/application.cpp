@@ -9,6 +9,7 @@
 
 #include "Application.h"
 #include "rendering/Shader.h"
+#include "rendering/Quad.h"
 
 #include <iostream>
 #include <string>
@@ -141,7 +142,7 @@ void Application::OnDrawUI()
         static glm::vec3 position = {};
         static glm::vec3 scale(1.0f);
         static float angle = 0;
-        //glm::mat4 transform = glm::mat4(1.0f);
+        glm::mat4 transform = glm::mat4(1.0f);
 
         ImGui::Begin("Change leonLand values");
         ImGui::Checkbox("Wire Frame", &wireFrame);
@@ -150,7 +151,8 @@ void Application::OnDrawUI()
         //ImGui::DragFloat3("Position", glm::value_ptr(position));
         //ImGui::DragFloat3("Scale", glm::value_ptr(scale));
         //ImGui::DragFloat("Angle", &angle);
-        ImGui::DragFloat3("Cam Position", glm::value_ptr(camPosition));
+        ImGui::DragFloat2("Cam Position", glm::value_ptr(camRect.Pos));
+        ImGui::DragFloat2("Cam Scale", glm::value_ptr(camRect.Bounds));
 
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
         if (ImGui::Button("Change Picture"))
@@ -170,12 +172,9 @@ void Application::OnDrawUI()
 
         _shader.SetUniformv4("_Color", squareColor);
 
-        //transform = glm::translate(transform, position);
         //transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
         //transform = glm::scale(transform, scale);
 
-        //_shader.SetMat4("transform", transform);
-        //_shader.SetMat4()
 
     }
 
@@ -194,16 +193,28 @@ void Application::OnRender()
     //Draw all elements
     glUseProgram(_shader);
     glBindVertexArray(_VAO);
-    //static glm::vec3 positions[] = {
-    //    {0,0,0},
-    //    {5,2,0},
 
-    //};
+    static Quad quads[] = {
+        {{0,0}, {1,1}, 0.0},
+        {{0.7,0}, {0.6,1}, 0.0}
 
-    //Perform transformations
+    };
 
-    //Last arguement is how many vertices we want to draw
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    auto camMat = GetCamMat4();
+    _shader.SetMat4("cam", camMat);
+
+    for (auto q : quads)
+    {
+        //Perform transformations
+        glm::mat4 transform = glm::mat4(1.0f);
+        transform = glm::translate(transform, glm::vec3(q.Pos, 0));
+        transform = glm::rotate(transform, glm::radians(q.Angle), glm::vec3(0, 0, 1));
+        transform = glm::scale(transform, glm::vec3(q.Scale, 1));
+        _shader.SetMat4("transform", transform);
+
+        //Last arguement is how many vertices we want to draw (this states were only going to draw using indices)
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
 
 
 }
@@ -278,6 +289,7 @@ void DrawQuad()
 void Application::OnInit()
 {
 
+    camRect.Bounds = { 1,1 };
 
     //OpenGl by default flips textures
     stbi_set_flip_vertically_on_load(true);
@@ -323,7 +335,7 @@ void Application::OnInit()
 }
 
 
-GLuint Application::GenerateTexture(const std::string & filePath)
+GLuint Application::GenerateTexture(const std::string& filePath)
 {
     int width, height, nrChannels;
     unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
@@ -353,6 +365,7 @@ GLuint Application::GenerateTexture(const std::string & filePath)
 
 glm::mat4 Application::GetCamMat4()
 {
-    //Negative direction because we want everything to go the other way
-    return glm::translate(glm::mat4(1.0f), -camPosition);
+    auto camArr = camRect.GetBounds();
+    //Very important that the clipping planes are properly adjusted or the 2d drawings that have a z position of 0 will not be drawn
+    return glm::ortho(camArr[0], camArr[1], camArr[2], camArr[3], -1.0f, 1.0f);
 }

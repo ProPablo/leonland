@@ -15,7 +15,8 @@ uniform mat4 cam;
 
 void main() 
 {
-	gl_Position = transform * vec4(aPos, 1.0);
+	//Often placd with projection * view * model * aPos
+	gl_Position = cam * transform * vec4(aPos, 1.0);
 	//gl_Position = vec4(aPos, 1.0);
 	tintColor = aColor;
 	TexCoord = aTexCoord;

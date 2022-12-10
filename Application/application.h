@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include "imgui/imgui.h"
 #include "rendering/Shader.h"
+#include "rendering/Quad.h"
 
 //TODO: make precompiled header with string and iostream if using this
 
@@ -25,7 +26,12 @@ private:
 	ImVec4 _clear_color = {};
 	//orthographic projection will make it so z doesnt matter here
 	//Currently, all positions go from -1 to 1
-	glm::vec3 camPosition = {0.0f, 0.0f, 3.0f};
+	//glm::vec3 camPosition = {0.0f, 0.0f, 3.0f};
+	//This will represent what the outerBounds of the scale should be
+	//glm::vec3 camZoom = {0.0f, 0.0f, 3.0f};
+
+	Rect camRect;
+
 	Shader _shader;
 	//GLuint _shaderProgram;
 	//Vertex array object

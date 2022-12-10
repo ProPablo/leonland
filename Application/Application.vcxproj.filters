@@ -51,6 +51,9 @@
     <ClCompile Include="stb\stb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rendering\Quad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h">
@@ -87,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stb\stb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rendering\Quad.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
