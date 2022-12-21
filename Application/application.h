@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 #include "rendering/Shader.h"
 #include "rendering/Quad.h"
+#include <iostream>
+#include "rendering/Renderer.h"
 
 //TODO: make precompiled header with string and iostream if using this
 
@@ -18,12 +20,12 @@
 class Application
 {
 public:
-	GLuint GenerateTexture(const std::string& filePath);
 	void Run();
 private:
 
 	GLFWwindow* _window = nullptr;
 	ImVec4 _clear_color = {};
+	Renderer _renderer;
 	//orthographic projection will make it so z doesnt matter here
 	//Currently, all positions go from -1 to 1
 	//glm::vec3 camPosition = {0.0f, 0.0f, 3.0f};
@@ -32,14 +34,11 @@ private:
 
 	Rect camRect;
 
-	Shader _shader;
-	//GLuint _shaderProgram;
-	//Vertex array object
-	GLuint _VAO;
 	void OnDrawUI();
 	glm::mat4 GetCamMat4();
 	void OnRender();
 	void OnInit();
+	std::shared_ptr<Shader> _shader;
 
 };
 

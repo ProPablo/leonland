@@ -10,12 +10,25 @@
 
 //Look up batch rendering for this https://www.youtube.com/watch?v=v5UDqm3zvcw
 
-bool Shader::Create(Shader& input, const std::string& vecShaderFilePath, const std::string& fragShaderFilePath)
+
+Shader::~Shader()
 {
+    
+    log_dbg("Killing shader" << _progRef);
+    glDeleteProgram(_progRef);
+}
+
+std::shared_ptr<Shader> Shader::Create( const std::string& vecShaderFilePath, const std::string& fragShaderFilePath)
+{
+
+    auto val = std::make_shared<Shader>();
+    //Simply dereferencing a pointer to get the original value
+    auto input = *val;
+
     auto vecShader = LoadShader(GetSource(vecShaderFilePath), GL_VERTEX_SHADER);
     auto fragShader = LoadShader(GetSource(fragShaderFilePath), GL_FRAGMENT_SHADER);
     if (!vecShader || !fragShader)
-        return false;
+        return nullptr;
 
     input._progRef = glCreateProgram();
     glAttachShader(input._progRef, vecShader);
@@ -32,9 +45,9 @@ bool Shader::Create(Shader& input, const std::string& vecShaderFilePath, const s
     {
         glGetProgramInfoLog(input._progRef, 512, NULL, infoLog);
         log_error(infoLog);
-        return false;
+        return nullptr;
     }
-    return true;
+    return val;
 }
 
 void Shader::SetUniformv4(const std::string& name, glm::vec4& val)

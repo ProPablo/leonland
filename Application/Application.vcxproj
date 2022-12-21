@@ -150,6 +150,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="rendering\Quad.cpp" />
+    <ClCompile Include="rendering\Renderer.cpp" />
     <ClCompile Include="rendering\Shader.cpp" />
     <ClCompile Include="stb\stb.cpp" />
   </ItemGroup>
@@ -165,6 +166,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="rendering\Quad.h" />
+    <ClInclude Include="rendering\Renderer.h" />
     <ClInclude Include="rendering\Shader.h" />
     <ClInclude Include="stb\stb.h" />
   </ItemGroup>
