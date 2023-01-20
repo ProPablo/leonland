@@ -3,13 +3,9 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
-#include "stb/stb.h"
 
-
+#include "core/Log.h"
 #include "Application.h"
-#include "rendering/Shader.h"
-#include "rendering/Quad.h"
 
 #include <iostream>
 #include <string>
@@ -92,12 +88,13 @@ void Application::Run()
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+        
         ImGui::NewFrame();
-
         OnDrawUI();
+        ImGui::EndFrame();
+        ImGui::Render();
 
         // Rendering
-        ImGui::Render();
         OnRender();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -111,8 +108,6 @@ void Application::Run()
             ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
-
-
         glfwSwapBuffers(_window);
     }
 
@@ -153,13 +148,14 @@ void Application::OnDrawUI()
         //ImGui::DragFloat("Angle", &angle);
         ImGui::DragFloat2("Cam Position", glm::value_ptr(camRect.Pos));
         ImGui::DragFloat2("Cam Scale", glm::value_ptr(camRect.Bounds));
-
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
-        if (ImGui::Button("Change Picture"))
-        {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, GenerateTexture(imageFile));
-        }
+
+        //if (ImGui::Button("Change Picture"))
+        //{
+        //    glActiveTexture(GL_TEXTURE1);
+        //    glBindTexture(GL_TEXTURE_2D, GenerateTexture(imageFile));
+        //}
+
         ImGui::SameLine();
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -170,7 +166,7 @@ void Application::OnDrawUI()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        _shader.SetUniformv4("_Color", squareColor);
+        _shader->SetUniformv4("_Color", squareColor);
 
         //transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
         //transform = glm::scale(transform, scale);
@@ -190,178 +186,60 @@ void Application::OnRender()
     glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    //Draw all elements
-    glUseProgram(_shader);
-    glBindVertexArray(_VAO);
-
-    static Quad quads[] = {
-        {{0,0}, {1,1}, 0.0},
-        {{0.7,0}, {0.6,1}, 0.0}
-
-    };
+    _renderer.BeginBatch();
 
     auto camMat = GetCamMat4();
-    _shader.SetMat4("cam", camMat);
+    _shader->SetMat4("cam", camMat);
 
-    for (auto q : quads)
+    for (Quad& q : _quads)
     {
+        _renderer.AddQuad(q);
         //Perform transformations
-        glm::mat4 transform = glm::mat4(1.0f);
-        transform = glm::translate(transform, glm::vec3(q.Pos, 0));
-        transform = glm::rotate(transform, glm::radians(q.Angle), glm::vec3(0, 0, 1));
-        transform = glm::scale(transform, glm::vec3(q.Scale, 1));
-        _shader.SetMat4("transform", transform);
+        //glm::mat4 transform = glm::mat4(1.0f);
+        //transform = glm::translate(transform, glm::vec3(q.Pos, 0));
+        //transform = glm::rotate(transform, glm::radians(q.Angle), glm::vec3(0, 0, 1));
+        //transform = glm::scale(transform, glm::vec3(q.Scale, 1));
+        //_shader->SetMat4("transform", transform);
 
         //Last arguement is how many vertices we want to draw (this states were only going to draw using indices)
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
+    _renderer.EndBatch();
 
-}
-
-void DrawQuad()
-{
-    //art done in https://asciiflow.com/#/share/eJy10ksKwjAQANCrDLNSSI0fFNqtrrtyGZDQBgmkCaRRWou38DiexpOYUsFPSylIh5DMwGPChFSoeSYw0ielCCpeCosRVgwLhlG4WRGGpc%2BWYegzJwrnC4Z7K7k%2BKgGJ0bmzp8RJo0FqiHdbmMTGZlzJSy5SSMVZJrUzNpWaO5FDsABnYDFlTD9u97FXcwv0R6ebk%2FlsPcABZT4GtaQAHbaL0npr2w5Km6Nl25QeXvFr3zTwI5PgY%2B6v%2Bq%2Fn7HOjfwK84vUJ68El2w%3D%3D)
-    /*
-            Triangle construction in NDC (Normalizsed device coordinates -1 to 1)
-            +-------------------------------+
-            |                               |
-            |            0,0.5              |
-            |             /\                |
-            |            /  \               |
-            |           /    \              |
-            |          /      \             |
-            |         /________\            |
-            | -0.5,-0.5        0.5,-0.5     |
-            |                               |
-            |                               |
-            +-------------------------------+
-    */
-
-    float vertices[] = {
-        //positions		//color			 //text_coord	
-         0.5,  0.5, 0.0f,  1.0f, 0.0f, 0.0f,   1.0f,1.0f,			//top right,
-         0.5, -0.5, 0.0f,	0.0f, 1.0f, 0.0f,	1.0f,0.0f,	//bottom right
-        -0.5, -0.5, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f,0.0f,	//bottom left
-        -0.5,  0.5, 0.0f,	0.0f, 1.0f, 1.0f,	0.0f,1.0f,	//top left
-    };
-    //Vertex Buffer Object
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-
-    //We have to bind buffer every time we are going to use the buffer
-    //The GL_ARRAY_BUFFER is there to indicate that this is to hold vertices
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    /*
-        Indices and which vertices are being used
-        -----------------------
-              3         0
-               +-------+
-               |\      |
-               | \     |
-               |  \ 1  |
-               |   \   |
-               |    \  |
-               |  2  \ |
-               |      \|
-               +-------+
-              2         1
-
-        -----------------------
-    */
-
-    int indices[] = {
-        0,1,3,
-        1,2,3
-    };
-
-    //Element Buffer Object
-    GLuint EBO;
-    glGenBuffers(1, &EBO);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 }
 
 
 void Application::OnInit()
 {
-
     camRect.Bounds = { 1,1 };
 
-    //OpenGl by default flips textures
-    stbi_set_flip_vertically_on_load(true);
-
-    //This stores the settings that glEnableVertattrib array and glVertexattrbPointer make
-    //In future multiple buffers, layout groups and different shaders to use with those different layout groups will be used.
-    glGenVertexArrays(1, &_VAO);
-    glBindVertexArray(_VAO);
-
-    DrawQuad();
-
-    Shader::Create(_shader, "shaders/vertex.glsl", "shaders/frag.glsl");
-    glUseProgram(_shader);
-
-    //(s,t,r) correspond to (x,y,z)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, GenerateTexture("assets/container.jpg"));
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, GenerateTexture("assets/agiri_chrismas.jpg"));
-    _shader.SetUniformi("background", 0);
-    _shader.SetUniformi("image", 1);
-
-
-    //This uses the VBO currently bound using glBindBuffer
-    //First arg is vertex attribute (layout (location = 0)) in vert shader
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    //color attrib									//stride(space between each entry) //offset
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
+    _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
+    _renderer.Init(_shader);
+    auto container = Texture::GenerateTexture("assets/container.jpg");
+    auto agiri = Texture::GenerateTexture("assets/agiri_christmas.jpg");
+    //this is called uniform initialisation
+    static Quad quads[] = {
+        {{0,0}, {1,1}, 0.0, agiri.get()},
+        {{1,0}, {0.6,1}, 1.0, container.get()}
+    };
+    //_quads.reserve(20); //Do this to make this process faster
+    //This copies over all the values (asks for quad r value OR a reference to an existing quad)
+    _quads.push_back(quads[0]);
+    _quads.push_back(quads[1]);
+    //emplace back needs a proper ctor to be made for it to work and pass the args into
+    //emplaced back doesnt support uniform initialisation
+    //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
+    agiri->Bind(0);
+    _shader->SetUniformi("image", 0);
+    container->Bind(1);
+    _shader->SetUniformi("background", 1);
+    
+    //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
+    //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
+    _textures.push_back(std::move(agiri));
+    _textures.push_back(std::move(container));
 }
 
-
-GLuint Application::GenerateTexture(const std::string& filePath)
-{
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
-    if (!data)
-    {
-        log_error("Failed to load texture");
-        return 0;
-    }
-
-    //https://stackoverflow.com/questions/71284184/opengl-distorted-texture
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //This is how bitpacking works with unsinged bytes (255) instead of full floats, doesnt make things slow excpet texture loading
-    //https://stackoverflow.com/questions/11042027/glpixelstoreigl-unpack-alignment-1-disadvantages
-    //This suggests that when changing etxtures to and from gpu, try to make it multiple of 8
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    //2nd arg: mipmap level
-    //3rd arg: texture type
-    //7.8th format and datatype of input
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
-
-    return texture;
-}
 
 glm::mat4 Application::GetCamMat4()
 {

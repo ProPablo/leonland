@@ -107,7 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\libs\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\libs\glfw\include;..\include%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,11 +150,15 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="rendering\Quad.cpp" />
+    <ClCompile Include="rendering\Renderer.cpp" />
     <ClCompile Include="rendering\Shader.cpp" />
     <ClCompile Include="stb\stb.cpp" />
+    <ClCompile Include="rendering\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
+    <ClInclude Include="core\Log.h" />
+    <ClInclude Include="core\Util.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_glfw.h" />
@@ -165,8 +169,11 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="rendering\Quad.h" />
+    <ClInclude Include="rendering\Renderer.h" />
     <ClInclude Include="rendering\Shader.h" />
+    <ClInclude Include="rendering\Vertex.h" />
     <ClInclude Include="stb\stb.h" />
+    <ClInclude Include="rendering\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="imgui.ini" />
