@@ -50,7 +50,7 @@ void Texture::Bind(uint32_t textureSlot)
     //So the ID is different from WHERE the texture is located within the slot array
     //There exists 32 slots on modern gpus, 8 on mobile
 
-    log_dbg("Binding texture " << _rendererID << "To texture slot " << textureSlot);
+    // log_dbg("Binding texture " << _rendererID << "To texture slot " << textureSlot);
     //This method convention for loading a single texture into a slot 
     glActiveTexture(GL_TEXTURE0 + textureSlot); // define texture slot
     glBindTexture(GL_TEXTURE_2D, _rendererID);

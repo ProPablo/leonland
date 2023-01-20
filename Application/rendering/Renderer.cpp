@@ -24,6 +24,9 @@ Renderer::~Renderer()
 void Renderer::Init(std::shared_ptr<Shader> shader)
 {
     _shader = shader;
+    //Gets value inside the pointer and type converts it to gluint using conversion operator
+    glUseProgram(*_shader);
+
     //Initialize Vector data as an array
     //This stores the settings that glEnableVertattrib array and glVertexattrbPointer make
     //In future multiple buffers, layout groups and different shaders to use with those different layout groups will be used.
@@ -70,9 +73,6 @@ void Renderer::Init(std::shared_ptr<Shader> shader)
         samplers[i] = i;
     }
     _shader->SetUniformiv("textures", samplers, MAX_ENVIRONMENT_TEXTURES);
-
-    //Gets value inside the pointer and type converts it to gluint using conversion operator
-    glUseProgram(*_shader);
 
 }
 
