@@ -1,52 +1,61 @@
 #include "Renderer.h"
-#include "../stb/stb.h"
-#include "../application.h"
+#include "../core/Log.h"
+#include "../core/Util.h"
+
+
+//In order to debug array as pointer use:
+//*(int(*)[10])some_pointer
+// https://github.com/Microsoft/vscode-cpptools/issues/172
+
+Renderer::Renderer()
+{
+    _vertexBuffer = new Vertex[MAX_VERTICES];
+    _currentVertexPtr = _vertexBuffer;
+    for (int i = 0; i < _textureSlots.size(); i++)
+        _textureSlots[i] = nullptr;
+}
+
+Renderer::~Renderer()
+{
+    delete[] _vertexBuffer;
+}
 
 //Init is better than the ctor as it can be run at a certain point after stack alloced memory
-void Renderer::Init()
+void Renderer::Init(std::shared_ptr<Shader> shader)
 {
-	//Initialize Vector data as an array
+    _shader = shader;
+    //Initialize Vector data as an array
     //This stores the settings that glEnableVertattrib array and glVertexattrbPointer make
     //In future multiple buffers, layout groups and different shaders to use with those different layout groups will be used.
     glGenVertexArrays(1, &_VAO);
     glBindVertexArray(_VAO);
 
     //Vertex Buffer Object
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &_VBO);
 
     //We have to bind buffer every time we are going to use the buffer
     //The GL_ARRAY_BUFFER is there to indicate that this is to hold vertices
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(_vertices), _vertices, GL_DYNAMIC_DRAW);
-
-    int indices[] = {
-        0,1,3,
-        1,2,3
-    };
-
-    //Element Buffer Object
-    GLuint EBO;
-    glGenBuffers(1, &EBO);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTICES, nullptr, GL_DYNAMIC_DRAW);
+    auto res = member_size(Vertex, pos);
 
     //This uses the VBO currently bound using glBindBuffer
     //First arg is vertex attribute (layout (location = 0)) in vert shader
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
 
     //color attrib									//stride(space between each entry) //offset
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
 
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texIndex));
 
-    Shader::Create(Shader, "shaders/vertex.glsl", "shaders/frag.glsl");
-    glUseProgram(Shader);
+    GenerateEBO();
+
 
     //(s,t,r) correspond to (x,y,z)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -54,64 +63,103 @@ void Renderer::Init()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glActiveTexture(GL_TEXTURE0);
+    int32_t samplers[MAX_ENVIRONMENT_TEXTURES];
+    for (int32_t i = 0; i < MAX_ENVIRONMENT_TEXTURES; i++)
+    {
+        samplers[i] = i;
+    }
+    _shader->SetUniformiv("textures", samplers, MAX_ENVIRONMENT_TEXTURES);
 
-    //OpenGl by default flips textures (uv starts at bottom left and the image is loaded from top left)
-    stbi_set_flip_vertically_on_load(true);
-
+    //Gets value inside the pointer and type converts it to gluint using conversion operator
+    glUseProgram(*_shader);
 
 }
 
 
-void Renderer::AddQuad(Quad quad)
+void Renderer::AddQuad(const Quad& quad)
 {
+    auto currentSlot = _currentAvailTexSlot++;
+    _textureSlots[currentSlot] = quad.Tex;
     //Add quad to vector
-
-    //Setup 
+    auto newVecs = quad.ToVerts(currentSlot);
+    for (auto& vec : newVecs)
+    {
+        *_currentVertexPtr = vec;
+        _currentVertexPtr++;
+    }
 }
 
 void Renderer::BeginBatch()
 {
-    _currentVertex = 0;
-    //Clear all vertices
-
+    _currentVertexPtr = _vertexBuffer;
+    _currentAvailTexSlot = 0;
 }
 
 void Renderer::EndBatch()
 {
-}
 
-void Renderer::Flush()
-{
-}
+    GLsizeiptr currentVertexCount = _currentVertexPtr - _vertexBuffer;
+    auto totalQuads = currentVertexCount / 4;
 
+    glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, currentVertexCount * sizeof(Vertex), _vertexBuffer);
 
+    //Draw all elements (Flush)
+    glUseProgram(*_shader);
+    glBindVertexArray(_VAO);
 
-GLuint Renderer::GenerateTexture(const std::string& filePath)
-{
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
-    if (!data)
+    for (int i = 0; i < _currentAvailTexSlot; i++)
     {
-        log_error("Failed to load texture");
-        return 0;
+        _textureSlots[i]->Bind(i);
     }
 
-    //https://stackoverflow.com/questions/71284184/opengl-distorted-texture
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); //This is how bitpacking works with unsinged bytes (255) instead of full floats, doesnt make things slow excpet texture loading
-    //https://stackoverflow.com/questions/11042027/glpixelstoreigl-unpack-alignment-1-disadvantages
-    //This suggests that when changing etxtures to and from gpu, try to make it multiple of 8
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glDrawElements(GL_TRIANGLES, totalQuads * 6, GL_UNSIGNED_INT, nullptr);
 
-    //2nd arg: mipmap level
-    //3rd arg: texture type
-    //7.8th format and datatype of input
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
+}
 
-    return texture;
+
+void Renderer::GenerateEBO()
+{
+    //art done in https://asciiflow.com/#/share/eJy10ksKwjAQANCrDLNSSI0fFNqtrrtyGZDQBgmkCaRRWou38DiexpOYUsFPSylIh5DMwGPChFSoeSYw0ielCCpeCosRVgwLhlG4WRGGpc%2BWYegzJwrnC4Z7K7k%2BKgGJ0bmzp8RJo0FqiHdbmMTGZlzJSy5SSMVZJrUzNpWaO5FDsABnYDFlTD9u97FXcwv0R6ebk%2FlsPcABZT4GtaQAHbaL0npr2w5Km6Nl25QeXvFr3zTwI5PgY%2B6v%2Bq%2Fn7HOjfwK84vUJ68El2w%3D%3D)
+    /*
+      Indices and which vertices are being used
+      -----------------------
+            3         0
+             +-------+
+             |\      |
+             | \     |
+             |  \ 1  |
+             |   \   |
+             |    \  |
+             |  2  \ |
+             |      \|
+             +-------+
+            2         1
+
+      -----------------------
+  */
+
+    int indices[] = {
+        0,1,3,
+        1,2,3
+    };
+
+    uint32_t indicesLocalBuffer[MAX_INDICES];
+    //uint32_t *indicesLocalBuffer = new uint32_t[MAX_INDICES];
+    int offset = 0;
+    for (int i = 0; i < MAX_INDICES; i += 6, offset += 4)
+    {
+        for (int j = 0; j < 6; j++)
+            indicesLocalBuffer[i + j] = indices[j] + offset;
+    }
+
+    //Element Buffer Object
+    GLuint EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * MAX_INDICES, indicesLocalBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicesLocalBuffer), indicesLocalBuffer, GL_STATIC_DRAW);
+
+
 }
 

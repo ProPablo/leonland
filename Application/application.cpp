@@ -3,12 +3,9 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
-
+#include "core/Log.h"
 #include "Application.h"
-#include "rendering/Shader.h"
-#include "rendering/Quad.h"
 
 #include <iostream>
 #include <string>
@@ -91,12 +88,13 @@ void Application::Run()
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+        
         ImGui::NewFrame();
-
         OnDrawUI();
+        ImGui::EndFrame();
+        ImGui::Render();
 
         // Rendering
-        ImGui::Render();
         OnRender();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -110,6 +108,7 @@ void Application::Run()
             ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
+        //Possibly need an EndFrame here
 
 
         glfwSwapBuffers(_window);
@@ -152,7 +151,6 @@ void Application::OnDrawUI()
         //ImGui::DragFloat("Angle", &angle);
         ImGui::DragFloat2("Cam Position", glm::value_ptr(camRect.Pos));
         ImGui::DragFloat2("Cam Scale", glm::value_ptr(camRect.Bounds));
-
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
 
         //if (ImGui::Button("Change Picture"))
@@ -171,7 +169,7 @@ void Application::OnDrawUI()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        _renderer.Shader.SetUniformv4("_Color", squareColor);
+        _shader->SetUniformv4("_Color", squareColor);
 
         //transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
         //transform = glm::scale(transform, scale);
@@ -191,96 +189,57 @@ void Application::OnRender()
     glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    static Quad quads[] = {
-        {{0,0}, {1,1}, 0.0},
-        {{0.7,0}, {0.6,1}, 0.0}
-
-    };
+    _renderer.BeginBatch();
 
     auto camMat = GetCamMat4();
-    _shader.SetMat4("cam", camMat);
+    _shader->SetMat4("cam", camMat);
 
-    for (auto q : quads)
+    for (Quad& q : _quads)
     {
+        _renderer.AddQuad(q);
         //Perform transformations
-        glm::mat4 transform = glm::mat4(1.0f);
-        transform = glm::translate(transform, glm::vec3(q.Pos, 0));
-        transform = glm::rotate(transform, glm::radians(q.Angle), glm::vec3(0, 0, 1));
-        transform = glm::scale(transform, glm::vec3(q.Scale, 1));
-        _shader.SetMat4("transform", transform);
+        //glm::mat4 transform = glm::mat4(1.0f);
+        //transform = glm::translate(transform, glm::vec3(q.Pos, 0));
+        //transform = glm::rotate(transform, glm::radians(q.Angle), glm::vec3(0, 0, 1));
+        //transform = glm::scale(transform, glm::vec3(q.Scale, 1));
+        //_shader->SetMat4("transform", transform);
 
         //Last arguement is how many vertices we want to draw (this states were only going to draw using indices)
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
+    _renderer.EndBatch();
 
 }
 
 void DrawQuad()
 {
-    //art done in https://asciiflow.com/#/share/eJy10ksKwjAQANCrDLNSSI0fFNqtrrtyGZDQBgmkCaRRWou38DiexpOYUsFPSylIh5DMwGPChFSoeSYw0ielCCpeCosRVgwLhlG4WRGGpc%2BWYegzJwrnC4Z7K7k%2BKgGJ0bmzp8RJo0FqiHdbmMTGZlzJSy5SSMVZJrUzNpWaO5FDsABnYDFlTD9u97FXcwv0R6ebk%2FlsPcABZT4GtaQAHbaL0npr2w5Km6Nl25QeXvFr3zTwI5PgY%2B6v%2Bq%2Fn7HOjfwK84vUJ68El2w%3D%3D)
-    /*
-            Triangle construction in NDC (Normalizsed device coordinates -1 to 1)
-            +-------------------------------+
-            |                               |
-            |            0,0.5              |
-            |             /\                |
-            |            /  \               |
-            |           /    \              |
-            |          /      \             |
-            |         /________\            |
-            | -0.5,-0.5        0.5,-0.5     |
-            |                               |
-            |                               |
-            +-------------------------------+
-    */
-
-    float vertices[] = {
-        //positions		//color			 //text_coord	
-         0.5,  0.5, 0.0f,  1.0f, 0.0f, 0.0f,   1.0f,1.0f,			//top right,
-         0.5, -0.5, 0.0f,	0.0f, 1.0f, 0.0f,	1.0f,0.0f,	//bottom right
-        -0.5, -0.5, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f,0.0f,	//bottom left
-        -0.5,  0.5, 0.0f,	0.0f, 1.0f, 1.0f,	0.0f,1.0f,	//top left
-    };
-
-    /*
-        Indices and which vertices are being used
-        -----------------------
-              3         0
-               +-------+
-               |\      |
-               | \     |
-               |  \ 1  |
-               |   \   |
-               |    \  |
-               |  2  \ |
-               |      \|
-               +-------+
-              2         1
-
-        -----------------------
-    */
-
 }
 
 
 void Application::OnInit()
 {
-
     camRect.Bounds = { 1,1 };
 
-
-    DrawQuad();
-
-    //glBindTexture(GL_TEXTURE_2D, GenerateTexture("assets/container.jpg"));
-
-    //glActiveTexture(GL_TEXTURE1);
-    //glBindTexture(GL_TEXTURE_2D, GenerateTexture("assets/agiri_chrismas.jpg"));
-    //_shader.SetUniformi("background", 0);
-    //_shader.SetUniformi("image", 1);
-
-    auto shaderInstance = Shader::Create( "shaders/vertex.glsl", "shaders/frag.glsl");
-
+    _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
+    _renderer.Init(_shader);
+    auto agiri = Texture::GenerateTexture("assets/container.jpg");
+    //_textures.push_back(agiri);
+    //this is called uniform initialisation
+    static Quad quads[] = {
+        {{0,0}, {1,1}, 0.0, agiri.get()},
+        {{1,0}, {0.6,1}, 1.0, agiri.get()}
+    };
+    //_quads.reserve(20); //Do this to make this process faster
+    //This copies over all the values (asks for quad r value OR a reference to an existing quad)
+    _quads.push_back(quads[0]);
+    _quads.push_back(quads[1]);
+    //emplace back needs a proper ctor to be made for it to work and pass the args into
+    //emplaced back doesnt support uniform initialisation
+    //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
+    agiri->Bind(0);
+    
+    _shader->SetUniformi("image", 0);
+    
 }
 
 

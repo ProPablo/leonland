@@ -1,21 +1,11 @@
 #pragma once
-#include <GLFW/glfw3.h>
 #include "imgui/imgui.h"
 #include "rendering/Shader.h"
 #include "rendering/Quad.h"
-#include <iostream>
 #include "rendering/Renderer.h"
 
-//TODO: make precompiled header with string and iostream if using this
-
-//https://stackoverflow.com/questions/8487986/file-macro-shows-full-path
-#if _WIN32
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#else
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#endif
-#define log_error(input) std::cout << __FILENAME__ << " (Error): " << input << std::endl;
-#define log_dbg(input) std::cout << __FILENAME__ << " (Debug): " << input << std::endl;
+//Has to be included after everything
+#include <GLFW/glfw3.h>
 
 class Application
 {
@@ -23,6 +13,7 @@ public:
 	void Run();
 private:
 
+	std::vector<Quad> _quads;
 	GLFWwindow* _window = nullptr;
 	ImVec4 _clear_color = {};
 	Renderer _renderer;
@@ -39,6 +30,7 @@ private:
 	void OnRender();
 	void OnInit();
 	std::shared_ptr<Shader> _shader;
+	std::vector<std::unique_ptr<Texture>> _textures;
 
 };
 
