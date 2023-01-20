@@ -37,6 +37,7 @@ void Renderer::Init(std::shared_ptr<Shader> shader)
     //The GL_ARRAY_BUFFER is there to indicate that this is to hold vertices
     glBindBuffer(GL_ARRAY_BUFFER, _VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTICES, nullptr, GL_DYNAMIC_DRAW);
+    auto floatSize = sizeof(float);
     auto res = member_size(Vertex, pos);
 
     //This uses the VBO currently bound using glBindBuffer

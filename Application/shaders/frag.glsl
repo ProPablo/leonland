@@ -3,7 +3,7 @@ out vec4 FragColor;
 uniform vec4 _Color;
 uniform sampler2D background;
 uniform sampler2D image;
-uniform sampler2D textures[32];
+uniform sampler2D textures[8];
 
 in vec4 tintColor;
 in vec2 TexCoord;
@@ -15,8 +15,9 @@ void main()
 	//FragColor = vec4(texIndex, texIndex,texIndex, 1);
 	//FragColor = _Color;
 	//FragColor = texture(image, TexCoord) * tintColor;
-	FragColor = vec4(TexCoord.x,TexCoord.y, 0, 1);
+	//FragColor = vec4(TexCoord.x,TexCoord.y, 0, 1);
+	//FragColor = texture(textures[1], TexCoord);
+	FragColor = texture(textures[index], TexCoord);
 	//vec4 backgroundColor = texture(background, TexCoord);
-	//'FragColor = texture(textures[1], TexCoord);
 	//FragColor = mix(texture(image, TexCoord), backgroundColor, 0.2);
 }

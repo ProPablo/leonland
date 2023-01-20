@@ -14,7 +14,7 @@ public:
 
     static const size_t MAX_VERTICES = 10000;
     static const size_t MAX_INDICES = (MAX_VERTICES / 4) * 6;
-    static const size_t MAX_ENVIRONMENT_TEXTURES = 32;
+    static const size_t MAX_ENVIRONMENT_TEXTURES = 8;
     void Init(std::shared_ptr<Shader> shader);
     void AddQuad(const Quad& quad);
     void BeginBatch();

@@ -35,7 +35,7 @@ std::unique_ptr<Texture> Texture::GenerateTexture(const std::string& filePath)
     unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
     if (!data)
     {
-        log_error("Failed to load texture");
+        log_error("Failed to load texture " << filePath);
         return nullptr;
     }
     auto texture = std::make_unique<Texture>(data, filePath, width, height);
@@ -50,7 +50,7 @@ void Texture::Bind(uint32_t textureSlot)
     //So the ID is different from WHERE the texture is located within the slot array
     //There exists 32 slots on modern gpus, 8 on mobile
 
-    log_dbg("Binding texture" << _rendererID << "To texture slot " << textureSlot);
+    log_dbg("Binding texture " << _rendererID << "To texture slot " << textureSlot);
     //This method convention for loading a single texture into a slot 
     glActiveTexture(GL_TEXTURE0 + textureSlot); // define texture slot
     glBindTexture(GL_TEXTURE_2D, _rendererID);

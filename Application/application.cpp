@@ -108,9 +108,6 @@ void Application::Run()
             ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
-        //Possibly need an EndFrame here
-
-
         glfwSwapBuffers(_window);
     }
 
@@ -211,10 +208,6 @@ void Application::OnRender()
 
 }
 
-void DrawQuad()
-{
-}
-
 
 void Application::OnInit()
 {
@@ -222,12 +215,12 @@ void Application::OnInit()
 
     _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
     _renderer.Init(_shader);
-    auto agiri = Texture::GenerateTexture("assets/container.jpg");
-    //_textures.push_back(agiri);
+    auto container = Texture::GenerateTexture("assets/container.jpg");
+    auto agiri = Texture::GenerateTexture("assets/agiri_christmas.jpg");
     //this is called uniform initialisation
     static Quad quads[] = {
         {{0,0}, {1,1}, 0.0, agiri.get()},
-        {{1,0}, {0.6,1}, 1.0, agiri.get()}
+        {{1,0}, {0.6,1}, 1.0, container.get()}
     };
     //_quads.reserve(20); //Do this to make this process faster
     //This copies over all the values (asks for quad r value OR a reference to an existing quad)
@@ -237,9 +230,14 @@ void Application::OnInit()
     //emplaced back doesnt support uniform initialisation
     //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
     agiri->Bind(0);
-    
     _shader->SetUniformi("image", 0);
+    container->Bind(1);
+    _shader->SetUniformi("background", 1);
     
+    //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
+    //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
+    _textures.push_back(std::move(agiri));
+    _textures.push_back(std::move(container));
 }
 
 
