@@ -27,7 +27,6 @@ public:
     
     //This const means that we are expecting this function to not mutate the member variables (Dont know why the const doesnt go to the front)
     std::array<Vertex, 4> ToVerts(uint32_t textureSlot) const;
-    glm::mat4 ToMat();
 };
 
 class Rect

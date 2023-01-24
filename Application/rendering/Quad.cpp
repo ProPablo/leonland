@@ -39,7 +39,11 @@ std::array<Vertex, 4> Quad::ToVerts(uint32_t textureSlot) const
     glm::mat4 transform(1.0f);
     transform = glm::translate(transform, glm::vec3(Pos, 0));
     transform = glm::rotate(transform, glm::radians(Angle), glm::vec3(0, 0, 1));
-    transform = glm::scale(transform, glm::vec3(Scale, 1));
+
+
+    auto spriteScale = Scale * ((glm::vec2)Tex->size / (float)Tex->pixelsPerUnit);
+    
+    transform = glm::scale(transform, glm::vec3(spriteScale, 1));
 
     for (int i = 0; i < 4; i++)
     {

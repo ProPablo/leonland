@@ -79,6 +79,7 @@ void Renderer::Init(std::shared_ptr<Shader> shader)
 
 void Renderer::AddQuad(const Quad& quad)
 {
+    
     auto currentSlot = _currentAvailTexSlot++;
     _textureSlots[currentSlot] = quad.Tex;
     //Add quad to vector

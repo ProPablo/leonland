@@ -1,7 +1,7 @@
 #include "Texture.h"
 #include "../stb/stb.h"
 #include "../core/Log.h";
-Texture::Texture(unsigned char* data, const std::string& name, int width, int height) : Name(name)
+Texture::Texture(unsigned char* data, const std::string& name, int width, int height) : Name(name), size({width, height})
 {
 
     //https://stackoverflow.com/questions/71284184/opengl-distorted-texture

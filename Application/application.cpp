@@ -9,6 +9,14 @@
 
 #include <iostream>
 #include <string>
+
+static Application* app = nullptr;
+
+Application& Application::GetApp()
+{
+    return *app;
+}
+
 static void glfw_error_callback(int error, const char* description)
 {
     //fprintf freaks out the compiler before init, so use cpp api 
@@ -16,13 +24,20 @@ static void glfw_error_callback(int error, const char* description)
     //const std::string s = std::to_string(error);
     std::cout << description << " :" << error << std::endl;
 }
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    app->WindowSize = { width, height };
+    std::cout << "Hey man" << std::endl;
+}
 
 
 void Application::Run()
 {
+    app = this;
     log_dbg("Starting Application");
     // Setup _window
     glfwSetErrorCallback(glfw_error_callback); //Calling this somehow breaks glfwInit so for now keep commented, never mind its just glfwInit
+
     if (!glfwInit()) //Calling this through Local windows Debugger (F5) causes slow startup sometimes, USE Ctrl + F5 to launch without debugger for no problems
         log_error("Init wrong");
     const char* glsl_version = "#version 130";
@@ -36,10 +51,15 @@ void Application::Run()
     if (_window == NULL)
         log_error("No _window");
 
+    glfwSetFramebufferSizeCallback(_window, framebuffer_size_callback);
+    //https://www.glfw.org/docs/3.3/window_guide.html#window_sizelimits
+    glfwSetWindowAspectRatio(_window, AspectRatio.x, AspectRatio.y);
+
+
     glfwMakeContextCurrent(_window);
 
     //glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    //glfwSwapInterval(1); // Enable vsync
+    glfwSwapInterval(0); // (1) Enable vsync
 
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -120,14 +140,40 @@ void Application::Run()
     glfwTerminate();
 }
 
-void Application::OnDrawUI()
+void Application::OnInit()
 {
 
-    // 1. Show the big demo _window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    //if (show_demo__window)
-    ImGui::ShowDemoWindow();
+    _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
+    _renderer.Init(_shader);
+    auto container = Texture::GenerateTexture("assets/container.jpg");
+    auto agiri = Texture::GenerateTexture("assets/agiri_christmas.jpg");
+    //this is called uniform initialisation
+    static Quad quads[] = {
+        {{0,0}, {1,1}, 0.0, agiri.get()},
+        {{1,0}, {0.6,1}, 70, container.get()}
+    };
+    //_quads.reserve(20); //Do this to make this process faster
+    //This copies over all the values (asks for quad r value OR a reference to an existing quad)
+    _quads.push_back(quads[0]);
+    _quads.push_back(quads[1]);
+    //emplace back needs a proper ctor to be made for it to work and pass the args into
+    //emplaced back doesnt support uniform initialisation
+    //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
+    agiri->Bind(0);
+    _shader->SetUniformi("image", 0);
+    container->Bind(1);
+    _shader->SetUniformi("background", 1);
+    
+    //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
+    //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
+    _textures.push_back(std::move(agiri));
+    _textures.push_back(std::move(container));
+    ImGui::GetStyle();
+}
 
-    // 2. Show a simple _window that we create ourselves. We use a Begin/End pair to created a named _window.
+void Application::OnDrawUI()
+{
+    ImGui::ShowDemoWindow();
     {
         static float f = 0.0f;
         static int counter = 0;
@@ -146,8 +192,8 @@ void Application::OnDrawUI()
         //ImGui::DragFloat3("Position", glm::value_ptr(position));
         //ImGui::DragFloat3("Scale", glm::value_ptr(scale));
         //ImGui::DragFloat("Angle", &angle);
-        ImGui::DragFloat2("Cam Position", glm::value_ptr(camRect.Pos));
-        ImGui::DragFloat2("Cam Scale", glm::value_ptr(camRect.Bounds));
+        ImGui::DragFloat2("Cam Position", glm::value_ptr(_cam.camRect.Pos));
+        ImGui::DragFloat2("Cam Scale", glm::value_ptr(_cam.camRect.Bounds));
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
 
         //if (ImGui::Button("Change Picture"))
@@ -156,7 +202,7 @@ void Application::OnDrawUI()
         //    glBindTexture(GL_TEXTURE_2D, GenerateTexture(imageFile));
         //}
 
-        ImGui::SameLine();
+        //ImGui::SameLine();
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::End();
@@ -166,15 +212,11 @@ void Application::OnDrawUI()
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        _shader->SetUniformv4("_Color", squareColor);
-
-        //transform = glm::rotate(transform, glm::radians(angle), glm::vec3(0, 0, 1));
-        //transform = glm::scale(transform, scale);
-
-
     }
 
 }
+//Keep this in mind to render while resizing
+//https://stackoverflow.com/questions/45880238/how-to-draw-while-resizing-glfw-window
 
 void Application::OnRender()
 {
@@ -182,68 +224,19 @@ void Application::OnRender()
     int display_w, display_h;
     //Can use set framebuffer size callback instyead
     glfwGetFramebufferSize(_window, &display_w, &display_h);
+    //These are input values, only resize to what you want here, set min perhaps
     glViewport(0, 0, display_w, display_h);
     glClearColor(_clear_color.x * _clear_color.w, _clear_color.y * _clear_color.w, _clear_color.z * _clear_color.w, _clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
 
     _renderer.BeginBatch();
 
-    auto camMat = GetCamMat4();
-    _shader->SetMat4("cam", camMat);
+    _shader->SetMat4("cam", _cam.GetMat4());
 
     for (Quad& q : _quads)
     {
         _renderer.AddQuad(q);
-        //Perform transformations
-        //glm::mat4 transform = glm::mat4(1.0f);
-        //transform = glm::translate(transform, glm::vec3(q.Pos, 0));
-        //transform = glm::rotate(transform, glm::radians(q.Angle), glm::vec3(0, 0, 1));
-        //transform = glm::scale(transform, glm::vec3(q.Scale, 1));
-        //_shader->SetMat4("transform", transform);
-
-        //Last arguement is how many vertices we want to draw (this states were only going to draw using indices)
     }
-
     _renderer.EndBatch();
 
-}
-
-
-void Application::OnInit()
-{
-    camRect.Bounds = { 1,1 };
-
-    _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
-    _renderer.Init(_shader);
-    auto container = Texture::GenerateTexture("assets/container.jpg");
-    auto agiri = Texture::GenerateTexture("assets/agiri_christmas.jpg");
-    //this is called uniform initialisation
-    static Quad quads[] = {
-        {{0,0}, {1,1}, 0.0, agiri.get()},
-        {{1,0}, {0.6,1}, 1.0, container.get()}
-    };
-    //_quads.reserve(20); //Do this to make this process faster
-    //This copies over all the values (asks for quad r value OR a reference to an existing quad)
-    _quads.push_back(quads[0]);
-    _quads.push_back(quads[1]);
-    //emplace back needs a proper ctor to be made for it to work and pass the args into
-    //emplaced back doesnt support uniform initialisation
-    //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
-    agiri->Bind(0);
-    _shader->SetUniformi("image", 0);
-    container->Bind(1);
-    _shader->SetUniformi("background", 1);
-    
-    //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
-    //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
-    _textures.push_back(std::move(agiri));
-    _textures.push_back(std::move(container));
-}
-
-
-glm::mat4 Application::GetCamMat4()
-{
-    auto camArr = camRect.GetBounds();
-    //Very important that the clipping planes are properly adjusted or the 2d drawings that have a z position of 0 will not be drawn
-    return glm::ortho(camArr[0], camArr[1], camArr[2], camArr[3], -1.0f, 1.0f);
 }
