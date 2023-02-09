@@ -2,7 +2,7 @@
 //Included to add glm::scale
 #include <glm/gtc/type_ptr.hpp>
 
-std::array<float, 4> Rect::GetBounds() const
+std::array<float, 4> Rect::GetExtents() const
 {
     std::array<float, 4> arr;
     arr[0] = Pos.x - Bounds.x;//left
