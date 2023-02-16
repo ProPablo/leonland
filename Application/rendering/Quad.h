@@ -47,7 +47,7 @@ public:
         return (p.x >= Pos.x && p.y >= Pos.y && p.x < Pos.x + Bounds.x && p.y < Pos.y + Bounds.y);
     }
 
-    constexpr bool Contains(const Rect& o) const
+    constexpr bool Overlaps(const Rect& o) const
     {
         //This is AABB
 
@@ -71,6 +71,12 @@ public:
         return (o.Pos.x < Pos.x + Bounds.x && o.Pos.x + o.Bounds.x > Pos.x &&
                 o.Pos.y < Pos.y + Bounds.y && o.Pos.y + o.Bounds.y > Pos.y);
 
+    }
+
+    constexpr bool Contains(const Rect& o) const
+    {
+        return (o.Pos.x >= Pos.x) && (o.Pos.x + o.Bounds.x < Pos.x < Bounds.x) &&
+            (o.Pos.y >= Pos.y) && (o.Pos.y + o.Bounds.y < Pos.y < Bounds.y);
     }
 
 };
