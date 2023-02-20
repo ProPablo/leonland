@@ -44,7 +44,9 @@ public:
     //The reason why this can be constexpr because it has no conditions and is simply some set of CPU instructions that will not change based on the input
     constexpr bool Contains(const glm::vec2& p) const
     {
-        return (p.x >= Pos.x && p.y >= Pos.y && p.x < Pos.x + Bounds.x && p.y < Pos.y + Bounds.y);
+        //TODO: fix using left and right calcs, pos is center and Bounds is sides
+        return (p.x >= Pos.x - Bounds.x && p.y >= Pos.y - Bounds.y &&
+            p.x < Pos.x + Bounds.x && p.y < Pos.y + Bounds.y);
     }
 
     constexpr bool Overlaps(const Rect& o) const
@@ -67,16 +69,17 @@ public:
          *      +-----------+
          */
 
-                //a.Left < b.Right        and a.Right > b.Left
-        return (o.Pos.x < Pos.x + Bounds.x && o.Pos.x + o.Bounds.x > Pos.x &&
-                o.Pos.y < Pos.y + Bounds.y && o.Pos.y + o.Bounds.y > Pos.y);
+                //a.Left < b.Right                      and a.Right > b.Left
+        return (o.Pos.x - o.Bounds.x < Pos.x + Bounds.x && o.Pos.x + o.Bounds.x > Pos.x - Bounds.x &&
+                o.Pos.y - o.Bounds.y < Pos.y + Bounds.y && o.Pos.y + o.Bounds.y > Pos.y - Bounds.y);
 
     }
 
     constexpr bool Contains(const Rect& o) const
     {
-        return (o.Pos.x >= Pos.x) && (o.Pos.x + o.Bounds.x < Pos.x < Bounds.x) &&
-            (o.Pos.y >= Pos.y) && (o.Pos.y + o.Bounds.y < Pos.y < Bounds.y);
+                //b.Left > Left                           &&  o.Right < Right
+        return (o.Pos.x - o.Bounds.x >= Pos.x - Bounds.x) && (o.Pos.x + o.Bounds.x < Pos.x + Bounds.x) &&
+               (o.Pos.y - o.Bounds.y >= Pos.y - Bounds.y) && (o.Pos.y + o.Bounds.y < Pos.y + Bounds.y);
     }
 
 };
