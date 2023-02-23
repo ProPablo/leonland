@@ -2,6 +2,10 @@
 //Included to add glm::scale
 #include <glm/gtc/type_ptr.hpp>
 
+Rect::Rect(glm::vec2 pos, glm::vec2 bounds): Pos(pos), Bounds(bounds)
+{
+}
+
 std::array<float, 4> Rect::GetExtents() const
 {
     std::array<float, 4> arr;

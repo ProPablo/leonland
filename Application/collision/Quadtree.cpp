@@ -1,6 +1,6 @@
 #include "Quadtree.h"
 
-Quadtree::Quadtree(float worldSize) : _worldSize(worldSize)
+QuadTree::QuadTree(float worldSize) : _worldSize(worldSize)
 {
 
 }

@@ -33,6 +33,8 @@ public:
 class Rect
 {
 public:
+    Rect() = default;
+    Rect(glm::vec2 pos, glm::vec2 bounds);
     glm::vec2 Pos;
     /// <summary>
     /// Width/2 & Height/2 (Goes from -1 to 1)

@@ -8,6 +8,7 @@
 //Has to be included after everything
 #include <GLFW/glfw3.h>
 #include "collision/Quadtree.h"
+#include <entt/entt.hpp>
 
 class Application
 {
@@ -37,6 +38,7 @@ private:
     std::shared_ptr<Shader> _shader;
     std::vector<std::unique_ptr<Texture>> _textures;
     std::vector<CollisionRect> _colliders;
+    entt::registry _registry;
 
 };
 

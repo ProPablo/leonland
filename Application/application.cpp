@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <entt/entt.hpp>
 
 //Old way of declaring static version of the app
 //is reasonable but if there is a shrd_ptr of app that needs the static instance to also be destroyed when closed, use cherno method
@@ -155,6 +156,10 @@ static float SPAWN_RADIUS = 100;
 void Application::OnInit()
 {
 
+    const entt::entity entity = _registry.create();
+    Rect lmao = Rect({ 0,0 }, { 1,1 });
+    _registry.emplace<Rect>(entity, glm::vec2( 0,0 ), glm::vec2( 1,1 ));
+
     //Demo code for colliders
     for (int i = 0; i < 10000; i++)
     {
@@ -162,6 +167,7 @@ void Application::OnInit()
         auto size = glm::vec2(0.5, 0.5);
         CollisionRect obj;
         obj._rect.Bounds = size;
+        auto randIndex = _textures.size();
 
         _colliders.push_back(obj);
 
@@ -182,12 +188,14 @@ void Application::OnInit()
     _quads.push_back(quads[0]);
     _quads.push_back(quads[1]);
     //emplace back needs a proper ctor to be made for it to work and pass the args into
-    //emplaced back doesnt support uniform initialisation
+    // emplaced back doesnt support uniform initialisation 
+    // https://stackoverflow.com/questions/8782895/why-doesnt-emplace-back-use-uniform-initialization
+    // This is why cpp sucks as a modern language, sometimes some things just need to be torn down from the start and rewritten 
     //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
-    agiri->Bind(0);
-    _shader->SetUniformi("image", 0);
-    container->Bind(1);
-    _shader->SetUniformi("background", 1);
+    // agiri->Bind(0);
+    // _shader->SetUniformi("image", 0);
+    // container->Bind(1);
+    // _shader->SetUniformi("background", 1);
 
     //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
     //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
