@@ -11,6 +11,7 @@ class Quad
 {
 public:
     //Quad(glm::vec2 pos,glm::vec2 scale, float angle, GLuint textureID);
+    //Specify the default param in the header file and decleration, will get auto filled in the implementation
     Quad(glm::vec2 pos, glm::vec2 scale, float angle, Texture* tex, glm::vec4 color = { 1,1,1,1 });
     glm::vec2 Pos;
     glm::vec2 Scale;
@@ -23,7 +24,7 @@ public:
     Texture* Tex;
     //If quads were variable and we wanted reference to the Textures to be lost once quads are gone, we would use regular shared_ptrs 
     //but this class is cycled around a lot in stack and using shared_ptrs here would lead to MASSIVE performance loss because of all the reference counting
-    //Update this class is referenced around using refs not copys and therefore doesnt get destructed all that often. SharedPTrs are very reasonable to use
+    //Update: this class is referenced around using refs not copys and therefore doesnt get destructed all that often. SharedPTrs are very reasonable to use
 
     //This const means that we are expecting this function to not mutate the member variables (Dont know why the const doesnt go to the front)
     std::array<Vertex, 4> ToVerts(uint32_t textureSlot) const;

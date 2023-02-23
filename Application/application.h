@@ -7,11 +7,14 @@
 
 //Has to be included after everything
 #include <GLFW/glfw3.h>
+#include "collision/Quadtree.h"
 
 class Application
 {
 public:
     static Application& GetApp();
+    //https://www.youtube.com/watch?v=lats2jd-JB8 for recs on how this was made
+    //static std::shared_ptr<Application> Get();
     glm::uvec2 WindowSize;
     glm::uvec2 AspectRatio = { 16,9 };
 
@@ -33,6 +36,7 @@ private:
     void OnInit();
     std::shared_ptr<Shader> _shader;
     std::vector<std::unique_ptr<Texture>> _textures;
+    std::vector<CollisionRect> _colliders;
 
 };
 

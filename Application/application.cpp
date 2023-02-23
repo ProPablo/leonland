@@ -10,12 +10,21 @@
 #include <iostream>
 #include <string>
 
+//Old way of declaring static version of the app
+//is reasonable but if there is a shrd_ptr of app that needs the static instance to also be destroyed when closed, use cherno method
 static Application* app = nullptr;
 
 Application& Application::GetApp()
 {
     return *app;
 }
+
+//static std::weak_ptr<Application> appInstance;
+//
+//std::shared_ptr<Application> Application::Get()
+//{
+//    return appInstance.lock();
+//}
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -27,6 +36,7 @@ static void glfw_error_callback(int error, const char* description)
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     app->WindowSize = { width, height };
+    //Application::Get()->WindowSize = {width, height};
     std::cout << "Hey man" << std::endl;
 }
 
@@ -108,7 +118,7 @@ void Application::Run()
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
-        
+
         ImGui::NewFrame();
         OnDrawUI();
         ImGui::EndFrame();
@@ -140,8 +150,23 @@ void Application::Run()
     glfwTerminate();
 }
 
+static float SPAWN_RADIUS = 100;
+
 void Application::OnInit()
 {
+
+    //Demo code for colliders
+    for (int i = 0; i < 10000; i++)
+    {
+        //auto spawnPos = 
+        auto size = glm::vec2(0.5, 0.5);
+        CollisionRect obj;
+        obj._rect.Bounds = size;
+
+        _colliders.push_back(obj);
+
+    }
+
 
     _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
     _renderer.Init(_shader);
@@ -163,7 +188,7 @@ void Application::OnInit()
     _shader->SetUniformi("image", 0);
     container->Bind(1);
     _shader->SetUniformi("background", 1);
-    
+
     //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
     //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
     _textures.push_back(std::move(agiri));
@@ -195,6 +220,7 @@ void Application::OnDrawUI()
         ImGui::DragFloat2("Cam Position", glm::value_ptr(_cam.camRect.Pos));
         ImGui::DragFloat2("Cam Scale", glm::value_ptr(_cam.camRect.Bounds));
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
+        ImGui::DragFloat("Spawn Radius", &SPAWN_RADIUS);
 
         //if (ImGui::Button("Change Picture"))
         //{
@@ -220,6 +246,10 @@ void Application::OnDrawUI()
 
 void Application::OnRender()
 {
+    //Eval physics loop
+    auto deltaTime = ImGui::GetIO().DeltaTime;
+
+
     //Clear buffer
     int display_w, display_h;
     //Can use set framebuffer size callback instyead
