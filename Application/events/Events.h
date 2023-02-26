@@ -14,6 +14,8 @@ class Observer
 {
 
 };
+
+//Each class here is responsible for an interaction on how to handle the event and can DI the parent transform or script object / just pass in the entity 
 class DeathObserver : Observer
 {
 public:
@@ -23,5 +25,6 @@ public:
 class Subject
 {
 public:
+    //Here you put in every possible class that can subscribe to this Subject
     LL_EVENTS_DEFINE_FUNC(DeathObserver, OnDie);
 };
