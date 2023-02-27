@@ -38,6 +38,11 @@ private:
     std::shared_ptr<Shader> _shader;
     std::vector<std::unique_ptr<Texture>> _textures;
     std::vector<CollisionRect> _colliders;
+
+
+    //Since unity is able to delete component, the way to use this would be to follow the ow ECS system and not worry about leaving references by DI and just doing GetComponent everywhere
+    //This avoids doing anything related to memory management 
+    // AS long as the event system is decently memory managed
     entt::registry _registry;
 
 };

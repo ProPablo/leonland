@@ -25,8 +25,12 @@ private:
     // callback(this)
 };
 
+
+
+//Can alert if it is within someoneElse as entity
+// Uses event system to get subscribers and whatnot
 //This may serve as a bounding box
-class CollisionRect
+class CollisionRect : Subject
 {
 public:
     // The ctor should ask for params that can be filled in with emplace back to solve nested object
