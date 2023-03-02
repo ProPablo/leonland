@@ -9,13 +9,25 @@
 
 #include <iostream>
 #include <string>
+#include <entt/entt.hpp>
+#include "core/BaseTypes.h"
 
+//Old way of declaring static version of the app
+//is reasonable but if there is a shrd_ptr of app that needs the static instance to also be destroyed when closed, use cherno method
 static Application* app = nullptr;
 
 Application& Application::GetApp()
 {
     return *app;
 }
+
+//Keep in mind a weak_ptr needs an existing shrd_ptr in order to actually be made
+//static std::weak_ptr<Application> appInstance;
+//
+//std::shared_ptr<Application> Application::Get()
+//{
+//    return appInstance.lock();
+//}
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -27,6 +39,7 @@ static void glfw_error_callback(int error, const char* description)
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     app->WindowSize = { width, height };
+    //Application::Get()->WindowSize = {width, height};
     std::cout << "Hey man" << std::endl;
 }
 
@@ -108,7 +121,7 @@ void Application::Run()
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
-        
+
         ImGui::NewFrame();
         OnDrawUI();
         ImGui::EndFrame();
@@ -140,8 +153,28 @@ void Application::Run()
     glfwTerminate();
 }
 
+static float SPAWN_RADIUS = 100;
+
 void Application::OnInit()
 {
+
+    const entt::entity entity = _registry.create();
+    Rect lmao = Rect({ 0,0 }, { 1,1 });
+    _registry.emplace<Rect>(entity, glm::vec2( 0,0 ), glm::vec2( 1,1 ));
+
+    //Demo code for colliders
+    for (int i = 0; i < 10000; i++)
+    {
+        //auto spawnPos = 
+        auto size = glm::vec2(0.5, 0.5);
+        CollisionRect obj;
+        obj._rect.Bounds = size;
+        auto randIndex = _textures.size();
+        _colliders.push_back(obj);
+        auto thing = _registry.get<Rect>(entity);
+
+    }
+
 
     _shader = Shader::Create("shaders/vertex.glsl", "shaders/frag.glsl");
     _renderer.Init(_shader);
@@ -157,13 +190,15 @@ void Application::OnInit()
     _quads.push_back(quads[0]);
     _quads.push_back(quads[1]);
     //emplace back needs a proper ctor to be made for it to work and pass the args into
-    //emplaced back doesnt support uniform initialisation
+    // emplaced back doesnt support uniform initialisation 
+    // https://stackoverflow.com/questions/8782895/why-doesnt-emplace-back-use-uniform-initialization
+    // This is why cpp sucks as a modern language, sometimes some things just need to be torn down from the start and rewritten 
     //_quads.emplace_back(glm::vec2(0,0), glm::vec2(1, 1), 0, agiri.get());
-    agiri->Bind(0);
-    _shader->SetUniformi("image", 0);
-    container->Bind(1);
-    _shader->SetUniformi("background", 1);
-    
+    // agiri->Bind(0);
+    // _shader->SetUniformi("image", 0);
+    // container->Bind(1);
+    // _shader->SetUniformi("background", 1);
+
     //VERY IMPORTANT that the reference to texture doesnt get lost at the end of the scope here otherwise destructor will get run
     //If textures were referenced using quads (using shrd_ptrs) this would likely not be a necessity 
     _textures.push_back(std::move(agiri));
@@ -195,6 +230,7 @@ void Application::OnDrawUI()
         ImGui::DragFloat2("Cam Position", glm::value_ptr(_cam.camRect.Pos));
         ImGui::DragFloat2("Cam Scale", glm::value_ptr(_cam.camRect.Bounds));
         ImGui::InputTextWithHint("Image file", "enter file loc here", imageFile, 255);
+        ImGui::DragFloat("Spawn Radius", &SPAWN_RADIUS);
 
         //if (ImGui::Button("Change Picture"))
         //{
@@ -218,8 +254,43 @@ void Application::OnDrawUI()
 //Keep this in mind to render while resizing
 //https://stackoverflow.com/questions/45880238/how-to-draw-while-resizing-glfw-window
 
+struct CollisionData
+{
+    entt::entity from;
+    entt::entity to;
+};
+
+//The system here comprises of only 1 function but you get the point
+void CollisionHandleSystem() 
+{
+
+}
+
+
 void Application::OnRender()
 {
+    //Eval physics loop
+    auto deltaTime = ImGui::GetIO().DeltaTime;
+
+    auto view = _registry.view<CollisionRect>();
+    for (auto entity : view)
+    {
+        CollisionRect &col = view.get<CollisionRect>(entity);
+        col.isSolved = false;
+    }
+    
+
+    std::vector<Entity> entitiesCollided;
+    for (auto [outEnt, outCol] : view.each())
+    for (auto [inEnt, inCol] : view.each())
+    {
+        if (inEnt == outEnt) continue;
+
+    }
+    
+    //Ref<Rect> rect = std::make_shared<Rect>();
+
+
     //Clear buffer
     int display_w, display_h;
     //Can use set framebuffer size callback instyead

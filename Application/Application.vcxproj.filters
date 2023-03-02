@@ -63,6 +63,9 @@
     <ClCompile Include="rendering\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="collision\Quadtree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h">
@@ -125,11 +128,18 @@
     <ClInclude Include="events\Events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collision\Quadtree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BaseTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="imgui.ini" />
     <None Include="shaders\vertex.glsl" />
     <None Include="shaders\frag.glsl" />
+    <None Include="core\StateMachine.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\muhheart.jpg">
