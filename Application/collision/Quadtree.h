@@ -1,5 +1,6 @@
 #pragma once
 #include "../rendering/Quad.h"
+#include "../core/Log.h"
 
 enum class CollisionType
 {
@@ -56,12 +57,12 @@ public:
 
 class CollisionShape
 {
-    virtual bool RunTest();
-
+    //This is an abstract class or an interface
+    virtual bool RunTest() = 0;
 };
 
 //Add these to the entity
-class CollisionCircl: CollisionShape
+class CollisionCircle: CollisionShape
 {
 
 };
@@ -69,10 +70,10 @@ class CollisionCircl: CollisionShape
 class CollisionAABB: CollisionShape
 {
     //If the Original Collision Rect actaully worked, means AABB succeeded as that uis just the bounding box
-    override bool RunTest()
+    bool RunTest()
     {
+        log_dbg("Running Test in AABB class");
         return true;
-
     }
 
 };
