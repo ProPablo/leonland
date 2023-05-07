@@ -278,6 +278,7 @@ void Application::OnRender()
         CollisionRect &col = view.get<CollisionRect>(entity);
         col.isSolved = false;
     }
+
     
 
     std::vector<Entity> entitiesCollided;

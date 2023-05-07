@@ -1,5 +1,6 @@
 #pragma once
 #include "../core/BaseTypes.h"
+#include "../core/Log.h"
 //class Event
 //{
 //    //https://stackoverflow.com/questions/25903643/bind-class-function-observer-c11
@@ -34,51 +35,92 @@
 //Because Components might die, its easier for Subjects and Observers to just be managed with sharedPointers and I dont imagine there would be many anyway
 
 //https://refactoring.guru/design-patterns/observer/cpp/example#:~:text=Observer%20in%20C%2B%2B,that%20implements%20a%20subscriber%20interface.
-//This uses cpp inheritance which exposes modifiers for the class itself
 class Observer
 {
     // Check if nullptr before unsubbing if using raw pointers,
     // this would have to be assigned to nullptr (from the subjects death and would be a form of manual reference counting)
+    // However this has the possibility to keep a Subject alive after its death if the observer is not disposed of 
     //Subject* _subject = nullptr;
+protected:
     Ref<Subject> _subject;
+    bool ShouldDie = false;
 public:
 
-    Observer(Ref<Subject> subject) : _subject(subject)
+    Observer(std::shared_ptr<Subject> subject) : _subject(subject)
     {
-        subject->Sub(this);
+        _subject->Sub(this);
     }
     // Calling unsub in the destructor (kind of a must) means Subject cant "own" Observer (store with sharedPointer) because sharedPointer is in fact the caller of the desctructor
     ~Observer()
     {
+        if (_subject == nullptr) return;
         _subject->Unsub(this);
     };
+
+    virtual void OnSubjectDied()
+    {
+        _subject = nullptr;
+        ShouldDie = true;
+    }
+
 };
 
 class Subject
 {
 public:
-    void Unsub(Observer* observer)
+    virtual void Unsub(Observer* observer)
     {
         //_observers.remove_if([](Ref<Observer> o) { o == o; });
         _observers.remove(observer);
     };
-    void Sub(Observer* observer)
+    virtual void Sub(Observer* observer)
     {
         _observers.push_back(observer);
-
     };
 
-private:
+protected:
     //Could probably use weakRefs instead but I like pointers Lul
     std::list<Observer*> _observers;
 };
 
+class EnemyDeathSubject : Subject
+{
+public:
+    std::string Name;
+    EnemyDeathSubject(const std::string& name) : Name(name)
+    {
+
+    }
+    void Die()
+    {
+        std::list<Observer*>::iterator iterator = _observers.begin();
+        while (iterator != _observers.end())
+        {
+            ((EnemyDeathObserver*)(*iterator))->OnDie(*this);
+            ++iterator;
+        }
+    }
+
+};
+
 class EnemyDeathObserver : Observer
 {
-public: 
-    void OnDie(Subject* ded)
+    // It can be seen that a should delete checker in a list is sometimes better than going through hoops to try and delete self from a vector due to memory locality  
+    //std::vector<EnemyDeathObserver>& _parent;
+public:
+    bool ShouldDelete = false;
+    //The static cast here is fine and will only reference count if it is saved to a variable, in this case it is just being passed around in stack 
+    EnemyDeathObserver(Ref<EnemyDeathSubject>subject)
+        : Observer(std::static_pointer_cast<Subject>(subject))
     {
-        delete this;
-    };
+    }
+
+    void OnDie(const EnemyDeathSubject& subject)
+    {
+        //Dont do this plz as it may be in the stack OR worse is in a container
+        //delete this;
+        log_dbg("subject " << subject.Name << "Just died lol");
+        ShouldDelete = true;
+    }
 
 };
